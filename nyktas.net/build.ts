@@ -11,8 +11,8 @@ import { lstatSync, Stats } from 'node:fs'
 const siteConfig = {
 	name: '墨原',
 	nameEnglish: 'Blair Nyktas',
-	handle: 'ncts',
-	baseUrl: 'https://ncts.me',
+	handle: 'nyktas',
+	baseUrl: 'https://nyktas.net',
 }
 const buildDir = '_build'
 const resourceExtensions = ['.html', '.css', '.js', '.webp', '.png', '.jpg', '.svg', '.woff2']
