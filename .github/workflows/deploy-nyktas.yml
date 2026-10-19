@@ -1,12 +1,12 @@
-name: Deploy ncts.me
+name: Deploy nyktas.net
 
 on:
   workflow_dispatch:
   push:
     branches: [master]
     paths:
-      - 'ncts.me/**'
-      - '.github/workflows/deploy-ncts.yml'
+      - 'nyktas.net/**'
+      - '.github/workflows/deploy-nyktas.yml'
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ncts.me
+        working-directory: nyktas.net
     steps:
       - uses: actions/checkout@v4
 
@@ -32,11 +32,11 @@ jobs:
 
       - run: bun run build
 
-      - run: echo 'ncts.me' > _build/CNAME
+      - run: echo 'nyktas.net' > _build/CNAME
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ncts.me/_build
+          path: nyktas.net/_build
 
   deploy:
     needs: build
