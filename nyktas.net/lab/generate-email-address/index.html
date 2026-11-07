@@ -1,0 +1,1494 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#f6f7f5">
+	<meta name="description" content="Create and decode reversible email aliases in your browser.">
+	<title>Email address generator</title>
+	<style>
+		:root {
+			color-scheme: light;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+			color: #26332a;
+			background: #f6f7f5;
+			font-synthesis: none;
+		}
+
+		* { box-sizing: border-box; }
+		body { margin: 0; }
+		button, input { font: inherit; }
+		button { cursor: pointer; }
+		button:disabled { cursor: not-allowed; }
+		[hidden] { display: none !important; }
+		.sr-only {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.page { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 52px; }
+		h1 { margin: 0 0 8px; font-size: 25px; font-weight: 650; letter-spacing: -.025em; }
+		.intro { margin: 0 0 22px; color: #5b6b60; font-size: 14px; line-height: 1.5; }
+		.tool {
+			padding: 24px;
+			background: #fff;
+			border: 1px solid #dfe5df;
+			border-radius: 9px;
+			box-shadow: 0 2px 8px rgb(34 51 39 / 4%);
+		}
+		.section + .section { margin-top: 23px; padding-top: 21px; border-top: 1px solid #e8ede9; }
+		.section-heading, .label-row {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 12px;
+		}
+		.section-heading { margin-bottom: 15px; }
+		h2 { margin: 0; font-size: 15px; font-weight: 650; }
+		.section-meta, .conversion-status { color: #627367; font-size: 12px; text-align: right; }
+		.conversion-status.is-warning { color: #994623; }
+		.settings-grid { display: grid; grid-template-columns: 1fr; gap: 17px; }
+		.field { min-width: 0; }
+		.label-row { margin-bottom: 7px; }
+		label { color: #34443a; font-size: 13px; font-weight: 600; }
+		.optional, .count { color: #627367; font-size: 12px; font-weight: 400; }
+		.input-shell, .code-input {
+			min-width: 0;
+			min-height: 41px;
+			color: #26332a;
+			background: #fff;
+			border: 1px solid #ccd7ce;
+			border-radius: 6px;
+		}
+		.input-shell { display: flex; align-items: center; }
+		.input-shell:focus-within, .code-input:focus {
+			border-color: #6d9477;
+			box-shadow: 0 0 0 3px rgb(109 148 119 / 16%);
+			outline: none;
+		}
+		.input-shell.is-invalid, .code-input[aria-invalid='true'] { border-color: #ba785c; }
+		.input-shell input {
+			flex: 1;
+			width: 100%;
+			min-width: 0;
+			padding: 10px 11px;
+			color: inherit;
+			background: transparent;
+			border: 0;
+			outline: 0;
+			font-size: 14px;
+		}
+		input::placeholder { color: #78877c; opacity: 1; }
+		.input-prefix { padding-left: 11px; color: #677b6b; font-size: 15px; }
+		.input-prefix + input { padding-left: 6px; }
+		.show-key, .copy-name {
+			align-self: stretch;
+			padding: 0 12px;
+			color: #3f6248;
+			background: transparent;
+			border: 0;
+			border-radius: 5px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.show-key:hover, .copy-name:not(:disabled):hover { background: #f1f5f1; }
+		.copy-name:disabled { color: #a4b0a6; }
+		.helper { margin: 7px 0 0; color: #637368; font-size: 12px; line-height: 1.45; }
+		.helper.is-warning, .count.is-warning { color: #994623; }
+		.remember {
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
+			margin-top: 11px;
+			color: #586d5e;
+			font-size: 12px;
+			font-weight: 400;
+			cursor: pointer;
+		}
+		.remember input { width: 14px; height: 14px; margin: 0; accent-color: #416c4d; }
+		.clear-button {
+			padding: 3px 0;
+			color: #4a7152;
+			background: none;
+			border: 0;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.clear-button:not(:disabled):hover { text-decoration: underline; }
+		.clear-button:disabled { color: #a8b3a9; }
+		.alias-field + .alias-field { margin-top: 22px; }
+		.code-input {
+			display: block;
+			width: 100%;
+			padding: 10px 11px;
+			font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+			font-size: 13px;
+		}
+		.code-input::placeholder { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+		.full-preview { display: flex; gap: 5px 8px; margin-top: 9px; color: #5e7062; font-size: 12px; }
+		.full-preview span { flex-shrink: 0; }
+		.full-preview output {
+			min-width: 0;
+			color: #344c3a;
+			font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+			overflow-wrap: anywhere;
+			user-select: all;
+		}
+		.format-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+		.action-button {
+			min-height: 34px;
+			padding: 7px 11px;
+			color: #355a3e;
+			background: #fff;
+			border: 1px solid #cbd9ce;
+			border-radius: 5px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.action-button:not(:disabled):hover { background: #f1f6f1; }
+		.action-button.primary { color: #fff; background: #416c4d; border-color: #416c4d; }
+		.action-button.primary:not(:disabled):hover { background: #315a3d; }
+		.action-button:disabled { color: #9caaa0; background: #f5f7f5; border-color: #e1e8e2; }
+		button:focus-visible, input[type='checkbox']:focus-visible {
+			outline: 3px solid #89ad91;
+			outline-offset: 2px;
+		}
+		.note { margin-top: 18px; color: #627168; font-size: 12px; line-height: 1.55; }
+		.note p { margin: 6px 0; }
+		.noscript {
+			margin-bottom: 18px;
+			padding: 12px;
+			color: #854321;
+			background: #fff2e8;
+			border-radius: 6px;
+			font-size: 13px;
+		}
+		.toast {
+			position: fixed;
+			right: 20px;
+			bottom: 20px;
+			max-width: min(360px, calc(100% - 40px));
+			padding: 10px 13px;
+			color: #fff;
+			background: #304c38;
+			border-radius: 6px;
+			box-shadow: 0 4px 14px rgb(34 51 39 / 16%);
+			font-size: 12px;
+			line-height: 1.4;
+		}
+
+		@media (max-width: 560px) {
+			.page { padding: 26px 0 36px; }
+			.tool { padding: 19px 16px; }
+			.input-shell input, .code-input { font-size: 16px; }
+			.code-input::placeholder { font-size: 14px; }
+			.full-preview { flex-direction: column; }
+		}
+	</style>
+</head>
+<body>
+	<main class="page">
+		<h1>Email address generator</h1>
+		<p class="intro">Enter a name to encode it, or paste an encoded alias to decode it.</p>
+		<noscript><div class="noscript">JavaScript is needed to create and decode aliases on this page.</div></noscript>
+
+		<div class="tool">
+			<section class="section" aria-labelledby="settings-title">
+				<div class="section-heading">
+					<h2 id="settings-title">Settings</h2>
+					<span class="section-meta" id="storage-status">Saved in this browser</span>
+				</div>
+				<div class="settings-grid">
+					<div class="field">
+						<div class="label-row"><label for="secret-key">Secret key</label></div>
+						<div class="input-shell">
+							<input id="secret-key" type="password" placeholder="A key you’ll remember" autocomplete="off"
+								autocapitalize="none" spellcheck="false" aria-describedby="key-help">
+							<button class="show-key" id="toggle-key" type="button" aria-label="Show secret key"
+								aria-pressed="false">Show</button>
+						</div>
+						<p class="helper" id="key-help">Use the same key to decode an alias later.</p>
+						<label class="remember"><input id="remember-key" type="checkbox" checked> Remember key in this browser</label>
+					</div>
+					<div class="field">
+						<div class="label-row"><label for="domain">Email domain</label><span class="optional">Optional</span></div>
+						<div class="input-shell" id="domain-shell">
+							<span class="input-prefix" aria-hidden="true">@</span>
+							<input id="domain" type="text" placeholder="yourdomain.com" autocomplete="off"
+								autocapitalize="none" spellcheck="false" aria-describedby="domain-help">
+						</div>
+						<p class="helper" id="domain-help">Add a domain to copy a full address. Pasting one also sets it here.</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="section" aria-labelledby="name-title">
+				<div class="section-heading">
+					<h2 id="name-title">Name</h2>
+					<button class="clear-button" id="clear" type="button" disabled>Clear name &amp; aliases</button>
+				</div>
+				<div class="label-row"><label for="name">Plain name</label></div>
+				<div class="input-shell" id="name-shell">
+					<input id="name" type="text" placeholder="e.g. newsletters" autocomplete="off" autocapitalize="none"
+						spellcheck="false" aria-describedby="name-help">
+					<button class="copy-name" type="button" data-copy="name" disabled><span>Copy</span></button>
+				</div>
+				<p class="helper" id="name-help">Or start by entering an encoded alias below.</p>
+			</section>
+
+			<section class="section" aria-labelledby="aliases-title">
+				<div class="section-heading">
+					<h2 id="aliases-title">Encoded aliases</h2>
+					<div class="conversion-status" id="conversion-status">
+						<span id="conversion-label" aria-hidden="true">Live conversion</span>
+						<span class="sr-only" id="conversion-announcement" role="status" aria-live="polite">Live conversion</span>
+					</div>
+				</div>
+				<div class="alias-field">
+					<div class="label-row">
+						<label for="base32">Base32</label>
+						<span class="count" id="base32-count" aria-label="0 of 64 characters">0 / 64</span>
+					</div>
+					<input class="code-input" id="base32" type="text" placeholder="Type or paste to decode"
+						autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="base32-help base32-count">
+					<p class="helper" id="base32-help">Paste a local part or full address to decode.</p>
+					<div class="full-preview" id="base32-preview" hidden>
+						<span>Full address:</span><output id="base32-address-preview" aria-label="Full Base32 address"></output>
+					</div>
+					<div class="format-actions">
+						<button class="action-button" type="button" data-copy="base32-local" disabled>
+							<span>Copy local part</span>
+						</button>
+						<button class="action-button primary" type="button" data-copy="base32-address" disabled>
+							<span>Copy address</span>
+						</button>
+					</div>
+				</div>
+				<div class="alias-field">
+					<div class="label-row">
+						<label for="hex">Hex</label>
+						<span class="count" id="hex-count" aria-label="0 of 64 characters">0 / 64</span>
+					</div>
+					<input class="code-input" id="hex" type="text" placeholder="Type or paste to decode" autocomplete="off"
+						autocapitalize="none" spellcheck="false" aria-describedby="hex-help hex-count">
+					<p class="helper" id="hex-help">Paste a local part or full address to decode.</p>
+					<div class="full-preview" id="hex-preview" hidden>
+						<span>Full address:</span><output id="hex-address-preview" aria-label="Full hex address"></output>
+					</div>
+					<div class="format-actions">
+						<button class="action-button" type="button" data-copy="hex-local" disabled><span>Copy local part</span></button>
+						<button class="action-button primary" type="button" data-copy="hex-address" disabled>
+							<span>Copy address</span>
+						</button>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<aside class="note">
+			<p>
+				Generating an address does not create an inbox or configure forwarding. Your domain must already receive mail
+				for these addresses.
+			</p>
+			<p>
+				The format obscures names but is deterministic and unauthenticated, so it is not suitable for sensitive
+				information. A wrong key may go undetected. Remembered keys are stored unencrypted in this browser.
+			</p>
+		</aside>
+	</main>
+	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+	<script>
+/*
+ * js-sha3 0.9.3
+ * Copyright 2015-2023 Chen, Yi-Cyuan
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+/**
+ * [js-sha3]{@link https://github.com/emn178/js-sha3}
+ *
+ * @version 0.9.3
+ * @author Chen, Yi-Cyuan [emn178@gmail.com]
+ * @copyright Chen, Yi-Cyuan 2015-2023
+ * @license MIT
+ */
+/*jslint bitwise: true */
+(function () {
+  'use strict';
+
+  var INPUT_ERROR = 'input is invalid type';
+  var FINALIZE_ERROR = 'finalize already called';
+  var WINDOW = typeof window === 'object';
+  var root = WINDOW ? window : {};
+  if (root.JS_SHA3_NO_WINDOW) {
+    WINDOW = false;
+  }
+  var WEB_WORKER = !WINDOW && typeof self === 'object';
+  var NODE_JS = !root.JS_SHA3_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node;
+  if (NODE_JS) {
+    root = global;
+  } else if (WEB_WORKER) {
+    root = self;
+  }
+  var COMMON_JS = !root.JS_SHA3_NO_COMMON_JS && typeof module === 'object' && module.exports;
+  var AMD = typeof define === 'function' && define.amd;
+  var ARRAY_BUFFER = !root.JS_SHA3_NO_ARRAY_BUFFER && typeof ArrayBuffer !== 'undefined';
+  var HEX_CHARS = '0123456789abcdef'.split('');
+  var SHAKE_PADDING = [31, 7936, 2031616, 520093696];
+  var CSHAKE_PADDING = [4, 1024, 262144, 67108864];
+  var KECCAK_PADDING = [1, 256, 65536, 16777216];
+  var PADDING = [6, 1536, 393216, 100663296];
+  var SHIFT = [0, 8, 16, 24];
+  var RC = [1, 0, 32898, 0, 32906, 2147483648, 2147516416, 2147483648, 32907, 0, 2147483649,
+    0, 2147516545, 2147483648, 32777, 2147483648, 138, 0, 136, 0, 2147516425, 0,
+    2147483658, 0, 2147516555, 0, 139, 2147483648, 32905, 2147483648, 32771,
+    2147483648, 32770, 2147483648, 128, 2147483648, 32778, 0, 2147483658, 2147483648,
+    2147516545, 2147483648, 32896, 2147483648, 2147483649, 0, 2147516424, 2147483648];
+  var BITS = [224, 256, 384, 512];
+  var SHAKE_BITS = [128, 256];
+  var OUTPUT_TYPES = ['hex', 'buffer', 'arrayBuffer', 'array', 'digest'];
+  var CSHAKE_BYTEPAD = {
+    '128': 168,
+    '256': 136
+  };
+
+
+  var isArray = root.JS_SHA3_NO_NODE_JS || !Array.isArray
+    ? function (obj) {
+        return Object.prototype.toString.call(obj) === '[object Array]';
+      }
+    : Array.isArray;
+
+  var isView = (ARRAY_BUFFER && (root.JS_SHA3_NO_ARRAY_BUFFER_IS_VIEW || !ArrayBuffer.isView))
+    ? function (obj) {
+        return typeof obj === 'object' && obj.buffer && obj.buffer.constructor === ArrayBuffer;
+      }
+    : ArrayBuffer.isView;
+
+  // [message: string, isString: bool]
+  var formatMessage = function (message) {
+    var type = typeof message;
+    if (type === 'string') {
+      return [message, true];
+    }
+    if (type !== 'object' || message === null) {
+      throw new Error(INPUT_ERROR);
+    }
+    if (ARRAY_BUFFER && message.constructor === ArrayBuffer) {
+      return [new Uint8Array(message), false];
+    }
+    if (!isArray(message) && !isView(message)) {
+      throw new Error(INPUT_ERROR);
+    }
+    return [message, false];
+  }
+
+  var empty = function (message) {
+    return formatMessage(message)[0].length === 0;
+  };
+
+  var cloneArray = function (array) {
+    var newArray = [];
+    for (var i = 0; i < array.length; ++i) {
+      newArray[i] = array[i];
+    }
+    return newArray;
+  }
+
+  var createOutputMethod = function (bits, padding, outputType) {
+    return function (message) {
+      return new Keccak(bits, padding, bits).update(message)[outputType]();
+    };
+  };
+
+  var createShakeOutputMethod = function (bits, padding, outputType) {
+    return function (message, outputBits) {
+      return new Keccak(bits, padding, outputBits).update(message)[outputType]();
+    };
+  };
+
+  var createCshakeOutputMethod = function (bits, padding, outputType) {
+    return function (message, outputBits, n, s) {
+      return methods['cshake' + bits].update(message, outputBits, n, s)[outputType]();
+    };
+  };
+
+  var createKmacOutputMethod = function (bits, padding, outputType) {
+    return function (key, message, outputBits, s) {
+      return methods['kmac' + bits].update(key, message, outputBits, s)[outputType]();
+    };
+  };
+
+  var createOutputMethods = function (method, createMethod, bits, padding) {
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createMethod(bits, padding, type);
+    }
+    return method;
+  };
+
+  var createMethod = function (bits, padding) {
+    var method = createOutputMethod(bits, padding, 'hex');
+    method.create = function () {
+      return new Keccak(bits, padding, bits);
+    };
+    method.update = function (message) {
+      return method.create().update(message);
+    };
+    return createOutputMethods(method, createOutputMethod, bits, padding);
+  };
+
+  var createShakeMethod = function (bits, padding) {
+    var method = createShakeOutputMethod(bits, padding, 'hex');
+    method.create = function (outputBits) {
+      return new Keccak(bits, padding, outputBits);
+    };
+    method.update = function (message, outputBits) {
+      return method.create(outputBits).update(message);
+    };
+    return createOutputMethods(method, createShakeOutputMethod, bits, padding);
+  };
+
+  var createCshakeMethod = function (bits, padding) {
+    var w = CSHAKE_BYTEPAD[bits];
+    var method = createCshakeOutputMethod(bits, padding, 'hex');
+    method.create = function (outputBits, n, s) {
+      if (empty(n) && empty(s)) {
+        return methods['shake' + bits].create(outputBits);
+      } else {
+        return new Keccak(bits, padding, outputBits).bytepad([n, s], w);
+      }
+    };
+    method.update = function (message, outputBits, n, s) {
+      return method.create(outputBits, n, s).update(message);
+    };
+    return createOutputMethods(method, createCshakeOutputMethod, bits, padding);
+  };
+
+  var createKmacMethod = function (bits, padding) {
+    var w = CSHAKE_BYTEPAD[bits];
+    var method = createKmacOutputMethod(bits, padding, 'hex');
+    method.create = function (key, outputBits, s) {
+      return new Kmac(bits, padding, outputBits).bytepad(['KMAC', s], w).bytepad([key], w);
+    };
+    method.update = function (key, message, outputBits, s) {
+      return method.create(key, outputBits, s).update(message);
+    };
+    return createOutputMethods(method, createKmacOutputMethod, bits, padding);
+  };
+
+  var algorithms = [
+    { name: 'keccak', padding: KECCAK_PADDING, bits: BITS, createMethod: createMethod },
+    { name: 'sha3', padding: PADDING, bits: BITS, createMethod: createMethod },
+    { name: 'shake', padding: SHAKE_PADDING, bits: SHAKE_BITS, createMethod: createShakeMethod },
+    { name: 'cshake', padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createCshakeMethod },
+    { name: 'kmac', padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createKmacMethod }
+  ];
+
+  var methods = {}, methodNames = [];
+
+  for (var i = 0; i < algorithms.length; ++i) {
+    var algorithm = algorithms[i];
+    var bits = algorithm.bits;
+    for (var j = 0; j < bits.length; ++j) {
+      var methodName = algorithm.name + '_' + bits[j];
+      methodNames.push(methodName);
+      methods[methodName] = algorithm.createMethod(bits[j], algorithm.padding);
+      if (algorithm.name !== 'sha3') {
+        var newMethodName = algorithm.name + bits[j];
+        methodNames.push(newMethodName);
+        methods[newMethodName] = methods[methodName];
+      }
+    }
+  }
+
+  function Keccak(bits, padding, outputBits) {
+    this.blocks = [];
+    this.s = [];
+    this.padding = padding;
+    this.outputBits = outputBits;
+    this.reset = true;
+    this.finalized = false;
+    this.block = 0;
+    this.start = 0;
+    this.blockCount = (1600 - (bits << 1)) >> 5;
+    this.byteCount = this.blockCount << 2;
+    this.outputBlocks = outputBits >> 5;
+    this.extraBytes = (outputBits & 31) >> 3;
+
+    for (var i = 0; i < 50; ++i) {
+      this.s[i] = 0;
+    }
+  }
+
+  Keccak.prototype.update = function (message) {
+    if (this.finalized) {
+      throw new Error(FINALIZE_ERROR);
+    }
+    var result = formatMessage(message);
+    message = result[0];
+    var isString = result[1];
+    var blocks = this.blocks, byteCount = this.byteCount, length = message.length,
+      blockCount = this.blockCount, index = 0, s = this.s, i, code;
+
+    while (index < length) {
+      if (this.reset) {
+        this.reset = false;
+        blocks[0] = this.block;
+        for (i = 1; i < blockCount + 1; ++i) {
+          blocks[i] = 0;
+        }
+      }
+      if (isString) {
+        for (i = this.start; index < length && i < byteCount; ++index) {
+          code = message.charCodeAt(index);
+          if (code < 0x80) {
+            blocks[i >> 2] |= code << SHIFT[i++ & 3];
+          } else if (code < 0x800) {
+            blocks[i >> 2] |= (0xc0 | (code >> 6)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else if (code < 0xd800 || code >= 0xe000) {
+            blocks[i >> 2] |= (0xe0 | (code >> 12)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else {
+            code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
+            blocks[i >> 2] |= (0xf0 | (code >> 18)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 12) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          }
+        }
+      } else {
+        for (i = this.start; index < length && i < byteCount; ++index) {
+          blocks[i >> 2] |= message[index] << SHIFT[i++ & 3];
+        }
+      }
+      this.lastByteIndex = i;
+      if (i >= byteCount) {
+        this.start = i - byteCount;
+        this.block = blocks[blockCount];
+        for (i = 0; i < blockCount; ++i) {
+          s[i] ^= blocks[i];
+        }
+        f(s);
+        this.reset = true;
+      } else {
+        this.start = i;
+      }
+    }
+    return this;
+  };
+
+  Keccak.prototype.encode = function (x, right) {
+    var o = x & 255, n = 1;
+    var bytes = [o];
+    x = x >> 8;
+    o = x & 255;
+    while (o > 0) {
+      bytes.unshift(o);
+      x = x >> 8;
+      o = x & 255;
+      ++n;
+    }
+    if (right) {
+      bytes.push(n);
+    } else {
+      bytes.unshift(n);
+    }
+    this.update(bytes);
+    return bytes.length;
+  };
+
+  Keccak.prototype.encodeString = function (str) {
+    var result = formatMessage(str);
+    str = result[0];
+    var isString = result[1];
+    var bytes = 0, length = str.length;
+    if (isString) {
+      for (var i = 0; i < str.length; ++i) {
+        var code = str.charCodeAt(i);
+        if (code < 0x80) {
+          bytes += 1;
+        } else if (code < 0x800) {
+          bytes += 2;
+        } else if (code < 0xd800 || code >= 0xe000) {
+          bytes += 3;
+        } else {
+          code = 0x10000 + (((code & 0x3ff) << 10) | (str.charCodeAt(++i) & 0x3ff));
+          bytes += 4;
+        }
+      }
+    } else {
+      bytes = length;
+    }
+    bytes += this.encode(bytes * 8);
+    this.update(str);
+    return bytes;
+  };
+
+  Keccak.prototype.bytepad = function (strs, w) {
+    var bytes = this.encode(w);
+    for (var i = 0; i < strs.length; ++i) {
+      bytes += this.encodeString(strs[i]);
+    }
+    var paddingBytes = (w - bytes % w) % w;
+    var zeros = [];
+    zeros.length = paddingBytes;
+    this.update(zeros);
+    return this;
+  };
+
+  Keccak.prototype.finalize = function () {
+    if (this.finalized) {
+      return;
+    }
+    this.finalized = true;
+    var blocks = this.blocks, i = this.lastByteIndex, blockCount = this.blockCount, s = this.s;
+    blocks[i >> 2] |= this.padding[i & 3];
+    if (this.lastByteIndex === this.byteCount) {
+      blocks[0] = blocks[blockCount];
+      for (i = 1; i < blockCount + 1; ++i) {
+        blocks[i] = 0;
+      }
+    }
+    blocks[blockCount - 1] |= 0x80000000;
+    for (i = 0; i < blockCount; ++i) {
+      s[i] ^= blocks[i];
+    }
+    f(s);
+  };
+
+  Keccak.prototype.toString = Keccak.prototype.hex = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+      extraBytes = this.extraBytes, i = 0, j = 0;
+    var hex = '', block;
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        block = s[i];
+        hex += HEX_CHARS[(block >> 4) & 0x0F] + HEX_CHARS[block & 0x0F] +
+          HEX_CHARS[(block >> 12) & 0x0F] + HEX_CHARS[(block >> 8) & 0x0F] +
+          HEX_CHARS[(block >> 20) & 0x0F] + HEX_CHARS[(block >> 16) & 0x0F] +
+          HEX_CHARS[(block >> 28) & 0x0F] + HEX_CHARS[(block >> 24) & 0x0F];
+      }
+      if (j % blockCount === 0) {
+        s = cloneArray(s);
+        f(s);
+        i = 0;
+      }
+    }
+    if (extraBytes) {
+      block = s[i];
+      hex += HEX_CHARS[(block >> 4) & 0x0F] + HEX_CHARS[block & 0x0F];
+      if (extraBytes > 1) {
+        hex += HEX_CHARS[(block >> 12) & 0x0F] + HEX_CHARS[(block >> 8) & 0x0F];
+      }
+      if (extraBytes > 2) {
+        hex += HEX_CHARS[(block >> 20) & 0x0F] + HEX_CHARS[(block >> 16) & 0x0F];
+      }
+    }
+    return hex;
+  };
+
+  Keccak.prototype.arrayBuffer = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+      extraBytes = this.extraBytes, i = 0, j = 0;
+    var bytes = this.outputBits >> 3;
+    var buffer;
+    if (extraBytes) {
+      buffer = new ArrayBuffer((outputBlocks + 1) << 2);
+    } else {
+      buffer = new ArrayBuffer(bytes);
+    }
+    var array = new Uint32Array(buffer);
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        array[j] = s[i];
+      }
+      if (j % blockCount === 0) {
+        s = cloneArray(s);
+        f(s);
+      }
+    }
+    if (extraBytes) {
+      array[j] = s[i];
+      buffer = buffer.slice(0, bytes);
+    }
+    return buffer;
+  };
+
+  Keccak.prototype.buffer = Keccak.prototype.arrayBuffer;
+
+  Keccak.prototype.digest = Keccak.prototype.array = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+      extraBytes = this.extraBytes, i = 0, j = 0;
+    var array = [], offset, block;
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        offset = j << 2;
+        block = s[i];
+        array[offset] = block & 0xFF;
+        array[offset + 1] = (block >> 8) & 0xFF;
+        array[offset + 2] = (block >> 16) & 0xFF;
+        array[offset + 3] = (block >> 24) & 0xFF;
+      }
+      if (j % blockCount === 0) {
+        s = cloneArray(s);
+        f(s);
+      }
+    }
+    if (extraBytes) {
+      offset = j << 2;
+      block = s[i];
+      array[offset] = block & 0xFF;
+      if (extraBytes > 1) {
+        array[offset + 1] = (block >> 8) & 0xFF;
+      }
+      if (extraBytes > 2) {
+        array[offset + 2] = (block >> 16) & 0xFF;
+      }
+    }
+    return array;
+  };
+
+  function Kmac(bits, padding, outputBits) {
+    Keccak.call(this, bits, padding, outputBits);
+  }
+
+  Kmac.prototype = new Keccak();
+
+  Kmac.prototype.finalize = function () {
+    this.encode(this.outputBits, true);
+    return Keccak.prototype.finalize.call(this);
+  };
+
+  var f = function (s) {
+    var h, l, n, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9,
+      b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+      b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33,
+      b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49;
+    for (n = 0; n < 48; n += 2) {
+      c0 = s[0] ^ s[10] ^ s[20] ^ s[30] ^ s[40];
+      c1 = s[1] ^ s[11] ^ s[21] ^ s[31] ^ s[41];
+      c2 = s[2] ^ s[12] ^ s[22] ^ s[32] ^ s[42];
+      c3 = s[3] ^ s[13] ^ s[23] ^ s[33] ^ s[43];
+      c4 = s[4] ^ s[14] ^ s[24] ^ s[34] ^ s[44];
+      c5 = s[5] ^ s[15] ^ s[25] ^ s[35] ^ s[45];
+      c6 = s[6] ^ s[16] ^ s[26] ^ s[36] ^ s[46];
+      c7 = s[7] ^ s[17] ^ s[27] ^ s[37] ^ s[47];
+      c8 = s[8] ^ s[18] ^ s[28] ^ s[38] ^ s[48];
+      c9 = s[9] ^ s[19] ^ s[29] ^ s[39] ^ s[49];
+
+      h = c8 ^ ((c2 << 1) | (c3 >>> 31));
+      l = c9 ^ ((c3 << 1) | (c2 >>> 31));
+      s[0] ^= h;
+      s[1] ^= l;
+      s[10] ^= h;
+      s[11] ^= l;
+      s[20] ^= h;
+      s[21] ^= l;
+      s[30] ^= h;
+      s[31] ^= l;
+      s[40] ^= h;
+      s[41] ^= l;
+      h = c0 ^ ((c4 << 1) | (c5 >>> 31));
+      l = c1 ^ ((c5 << 1) | (c4 >>> 31));
+      s[2] ^= h;
+      s[3] ^= l;
+      s[12] ^= h;
+      s[13] ^= l;
+      s[22] ^= h;
+      s[23] ^= l;
+      s[32] ^= h;
+      s[33] ^= l;
+      s[42] ^= h;
+      s[43] ^= l;
+      h = c2 ^ ((c6 << 1) | (c7 >>> 31));
+      l = c3 ^ ((c7 << 1) | (c6 >>> 31));
+      s[4] ^= h;
+      s[5] ^= l;
+      s[14] ^= h;
+      s[15] ^= l;
+      s[24] ^= h;
+      s[25] ^= l;
+      s[34] ^= h;
+      s[35] ^= l;
+      s[44] ^= h;
+      s[45] ^= l;
+      h = c4 ^ ((c8 << 1) | (c9 >>> 31));
+      l = c5 ^ ((c9 << 1) | (c8 >>> 31));
+      s[6] ^= h;
+      s[7] ^= l;
+      s[16] ^= h;
+      s[17] ^= l;
+      s[26] ^= h;
+      s[27] ^= l;
+      s[36] ^= h;
+      s[37] ^= l;
+      s[46] ^= h;
+      s[47] ^= l;
+      h = c6 ^ ((c0 << 1) | (c1 >>> 31));
+      l = c7 ^ ((c1 << 1) | (c0 >>> 31));
+      s[8] ^= h;
+      s[9] ^= l;
+      s[18] ^= h;
+      s[19] ^= l;
+      s[28] ^= h;
+      s[29] ^= l;
+      s[38] ^= h;
+      s[39] ^= l;
+      s[48] ^= h;
+      s[49] ^= l;
+
+      b0 = s[0];
+      b1 = s[1];
+      b32 = (s[11] << 4) | (s[10] >>> 28);
+      b33 = (s[10] << 4) | (s[11] >>> 28);
+      b14 = (s[20] << 3) | (s[21] >>> 29);
+      b15 = (s[21] << 3) | (s[20] >>> 29);
+      b46 = (s[31] << 9) | (s[30] >>> 23);
+      b47 = (s[30] << 9) | (s[31] >>> 23);
+      b28 = (s[40] << 18) | (s[41] >>> 14);
+      b29 = (s[41] << 18) | (s[40] >>> 14);
+      b20 = (s[2] << 1) | (s[3] >>> 31);
+      b21 = (s[3] << 1) | (s[2] >>> 31);
+      b2 = (s[13] << 12) | (s[12] >>> 20);
+      b3 = (s[12] << 12) | (s[13] >>> 20);
+      b34 = (s[22] << 10) | (s[23] >>> 22);
+      b35 = (s[23] << 10) | (s[22] >>> 22);
+      b16 = (s[33] << 13) | (s[32] >>> 19);
+      b17 = (s[32] << 13) | (s[33] >>> 19);
+      b48 = (s[42] << 2) | (s[43] >>> 30);
+      b49 = (s[43] << 2) | (s[42] >>> 30);
+      b40 = (s[5] << 30) | (s[4] >>> 2);
+      b41 = (s[4] << 30) | (s[5] >>> 2);
+      b22 = (s[14] << 6) | (s[15] >>> 26);
+      b23 = (s[15] << 6) | (s[14] >>> 26);
+      b4 = (s[25] << 11) | (s[24] >>> 21);
+      b5 = (s[24] << 11) | (s[25] >>> 21);
+      b36 = (s[34] << 15) | (s[35] >>> 17);
+      b37 = (s[35] << 15) | (s[34] >>> 17);
+      b18 = (s[45] << 29) | (s[44] >>> 3);
+      b19 = (s[44] << 29) | (s[45] >>> 3);
+      b10 = (s[6] << 28) | (s[7] >>> 4);
+      b11 = (s[7] << 28) | (s[6] >>> 4);
+      b42 = (s[17] << 23) | (s[16] >>> 9);
+      b43 = (s[16] << 23) | (s[17] >>> 9);
+      b24 = (s[26] << 25) | (s[27] >>> 7);
+      b25 = (s[27] << 25) | (s[26] >>> 7);
+      b6 = (s[36] << 21) | (s[37] >>> 11);
+      b7 = (s[37] << 21) | (s[36] >>> 11);
+      b38 = (s[47] << 24) | (s[46] >>> 8);
+      b39 = (s[46] << 24) | (s[47] >>> 8);
+      b30 = (s[8] << 27) | (s[9] >>> 5);
+      b31 = (s[9] << 27) | (s[8] >>> 5);
+      b12 = (s[18] << 20) | (s[19] >>> 12);
+      b13 = (s[19] << 20) | (s[18] >>> 12);
+      b44 = (s[29] << 7) | (s[28] >>> 25);
+      b45 = (s[28] << 7) | (s[29] >>> 25);
+      b26 = (s[38] << 8) | (s[39] >>> 24);
+      b27 = (s[39] << 8) | (s[38] >>> 24);
+      b8 = (s[48] << 14) | (s[49] >>> 18);
+      b9 = (s[49] << 14) | (s[48] >>> 18);
+
+      s[0] = b0 ^ (~b2 & b4);
+      s[1] = b1 ^ (~b3 & b5);
+      s[10] = b10 ^ (~b12 & b14);
+      s[11] = b11 ^ (~b13 & b15);
+      s[20] = b20 ^ (~b22 & b24);
+      s[21] = b21 ^ (~b23 & b25);
+      s[30] = b30 ^ (~b32 & b34);
+      s[31] = b31 ^ (~b33 & b35);
+      s[40] = b40 ^ (~b42 & b44);
+      s[41] = b41 ^ (~b43 & b45);
+      s[2] = b2 ^ (~b4 & b6);
+      s[3] = b3 ^ (~b5 & b7);
+      s[12] = b12 ^ (~b14 & b16);
+      s[13] = b13 ^ (~b15 & b17);
+      s[22] = b22 ^ (~b24 & b26);
+      s[23] = b23 ^ (~b25 & b27);
+      s[32] = b32 ^ (~b34 & b36);
+      s[33] = b33 ^ (~b35 & b37);
+      s[42] = b42 ^ (~b44 & b46);
+      s[43] = b43 ^ (~b45 & b47);
+      s[4] = b4 ^ (~b6 & b8);
+      s[5] = b5 ^ (~b7 & b9);
+      s[14] = b14 ^ (~b16 & b18);
+      s[15] = b15 ^ (~b17 & b19);
+      s[24] = b24 ^ (~b26 & b28);
+      s[25] = b25 ^ (~b27 & b29);
+      s[34] = b34 ^ (~b36 & b38);
+      s[35] = b35 ^ (~b37 & b39);
+      s[44] = b44 ^ (~b46 & b48);
+      s[45] = b45 ^ (~b47 & b49);
+      s[6] = b6 ^ (~b8 & b0);
+      s[7] = b7 ^ (~b9 & b1);
+      s[16] = b16 ^ (~b18 & b10);
+      s[17] = b17 ^ (~b19 & b11);
+      s[26] = b26 ^ (~b28 & b20);
+      s[27] = b27 ^ (~b29 & b21);
+      s[36] = b36 ^ (~b38 & b30);
+      s[37] = b37 ^ (~b39 & b31);
+      s[46] = b46 ^ (~b48 & b40);
+      s[47] = b47 ^ (~b49 & b41);
+      s[8] = b8 ^ (~b0 & b2);
+      s[9] = b9 ^ (~b1 & b3);
+      s[18] = b18 ^ (~b10 & b12);
+      s[19] = b19 ^ (~b11 & b13);
+      s[28] = b28 ^ (~b20 & b22);
+      s[29] = b29 ^ (~b21 & b23);
+      s[38] = b38 ^ (~b30 & b32);
+      s[39] = b39 ^ (~b31 & b33);
+      s[48] = b48 ^ (~b40 & b42);
+      s[49] = b49 ^ (~b41 & b43);
+
+      s[0] ^= RC[n];
+      s[1] ^= RC[n + 1];
+    }
+  };
+
+  if (COMMON_JS) {
+    module.exports = methods;
+  } else {
+    for (i = 0; i < methodNames.length; ++i) {
+      root[methodNames[i]] = methods[methodNames[i]];
+    }
+    if (AMD) {
+      define(function () {
+        return methods;
+      });
+    }
+  }
+})();
+	</script>
+	<script>
+		(() => {
+			'use strict';
+
+			const encoder = new TextEncoder();
+			const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+			const alphabet = '0123456789abcdefghjkmnpqrstvwxyz';
+			const fields = {
+				name: document.getElementById('name'),
+				base32: document.getElementById('base32'),
+				hex: document.getElementById('hex')
+			};
+			const ui = {
+				key: document.getElementById('secret-key'),
+				domain: document.getElementById('domain'),
+				remember: document.getElementById('remember-key'),
+				storageStatus: document.getElementById('storage-status'),
+				keyHelp: document.getElementById('key-help'),
+				domainHelp: document.getElementById('domain-help'),
+				domainShell: document.getElementById('domain-shell'),
+				nameHelp: document.getElementById('name-help'),
+				nameShell: document.getElementById('name-shell'),
+				clear: document.getElementById('clear'),
+				status: document.getElementById('conversion-status'),
+				statusLabel: document.getElementById('conversion-label'),
+				statusAnnouncement: document.getElementById('conversion-announcement'),
+				toast: document.getElementById('toast'),
+				toggleKey: document.getElementById('toggle-key')
+			};
+			const formats = {
+				base32: {
+					help: document.getElementById('base32-help'),
+					count: document.getElementById('base32-count'),
+					preview: document.getElementById('base32-preview'),
+					previewAddress: document.getElementById('base32-address-preview')
+				},
+				hex: {
+					help: document.getElementById('hex-help'),
+					count: document.getElementById('hex-count'),
+					preview: document.getElementById('hex-preview'),
+					previewAddress: document.getElementById('hex-address-preview')
+				}
+			};
+			const copyButtons = document.querySelectorAll('[data-copy]');
+			const copyTimers = new WeakMap();
+			let source = 'name';
+			let result = null;
+			let conversionError = '';
+			let storageAvailable = true;
+			let toastTimer;
+
+			class AliasInputError extends Error {}
+
+			function hash(bytes) {
+				return Uint8Array.from(window.sha3_512.array(bytes));
+			}
+
+			function rotateLeft(value, bits) {
+				return (value << bits) | (value >>> (32 - bits));
+			}
+
+			/* Adapted from Devi Mandiri's public-domain chacha20 implementation. */
+			function quarterRound(state, a, b, c, d) {
+				state[a] += state[b]; state[d] = rotateLeft(state[d] ^ state[a], 16);
+				state[c] += state[d]; state[b] = rotateLeft(state[b] ^ state[c], 12);
+				state[a] += state[b]; state[d] = rotateLeft(state[d] ^ state[a], 8);
+				state[c] += state[d]; state[b] = rotateLeft(state[b] ^ state[c], 7);
+			}
+
+			function chacha20(bytes, key, nonce) {
+				const state = new Uint32Array(16);
+				const keyView = new DataView(key.buffer, key.byteOffset, key.byteLength);
+				const nonceView = new DataView(nonce.buffer, nonce.byteOffset, nonce.byteLength);
+				state.set([0x61707865, 0x3320646e, 0x79622d32, 0x6b206574]);
+				for (let i = 0; i < 8; i++) state[4 + i] = keyView.getUint32(i * 4, true);
+				for (let i = 0; i < 3; i++) state[13 + i] = nonceView.getUint32(i * 4, true);
+				const output = new Uint8Array(bytes.length);
+				for (let offset = 0; offset < bytes.length; offset += 64) {
+					const block = state.slice();
+					for (let round = 0; round < 10; round++) {
+						quarterRound(block, 0, 4, 8, 12);
+						quarterRound(block, 1, 5, 9, 13);
+						quarterRound(block, 2, 6, 10, 14);
+						quarterRound(block, 3, 7, 11, 15);
+						quarterRound(block, 0, 5, 10, 15);
+						quarterRound(block, 1, 6, 11, 12);
+						quarterRound(block, 2, 7, 8, 13);
+						quarterRound(block, 3, 4, 9, 14);
+					}
+					for (let i = 0; i < 16; i++) block[i] += state[i];
+					const length = Math.min(64, bytes.length - offset);
+					for (let i = 0; i < length; i++) {
+						output[offset + i] = bytes[offset + i] ^ ((block[i >> 2] >>> ((i & 3) * 8)) & 255);
+					}
+					state[12]++;
+					if (state[12] === 0) state[13]++;
+				}
+				return output;
+			}
+
+			function transform(bytes, key) {
+				const digest = hash(encoder.encode(key));
+				return chacha20(bytes, digest.subarray(24, 56), digest.subarray(12, 24));
+			}
+
+			function padName(name) {
+				const bytes = encoder.encode(name);
+				const length = 5 * (Math.floor((bytes.length + 1) / 5) + 1) - 1;
+				const padded = new Uint8Array(length);
+				padded.set(bytes);
+				return padded;
+			}
+
+			function decodeName(ciphertext, key) {
+				if (ciphertext.length < 4 || ciphertext.length % 5 !== 4) {
+					throw new AliasInputError('Keep typing: this is not a complete alias yet.');
+				}
+				const bytes = transform(ciphertext, key);
+				let end = bytes.length;
+				while (end > 0 && bytes[end - 1] === 0) end--;
+				const paddingLength = bytes.length - end;
+				if (paddingLength < 1 || paddingLength > 5) {
+					throw new AliasInputError('Could not decode. Check the key and the complete alias.');
+				}
+				let name;
+				try {
+					name = decoder.decode(bytes.subarray(0, end));
+				} catch {
+					throw new AliasInputError('Could not decode. Check the key and the complete alias.');
+				}
+				if (/[\r\n]/.test(name)) {
+					throw new AliasInputError('Could not decode. Check the key and the complete alias.');
+				}
+				return name;
+			}
+
+			/* Preserve the original format's XOR and radix quirks so existing aliases still decode. */
+			function legacyMark(bytes) {
+				const digest = hash(bytes);
+				const number = (digest[2] << 8) + digest[3];
+				return (Number.parseInt(String(number), 16) % 7) % bytes.length;
+			}
+
+			function encodeCrockford(bytes) {
+				let value = 0;
+				let bits = 0;
+				let encoded = '';
+				for (const byte of bytes) {
+					value = (value << 8) | byte;
+					bits += 8;
+					while (bits >= 5) {
+						bits -= 5;
+						encoded += alphabet[(value >>> bits) & 31];
+					}
+					value &= (1 << bits) - 1;
+				}
+				if (bits) encoded += alphabet[(value << (5 - bits)) & 31];
+				return encoded;
+			}
+
+			function encodeBase32(ciphertext) {
+				const bytes = ciphertext.slice();
+				const mark = legacyMark(bytes);
+				for (let round = 0; round < mark; round++) {
+					bytes.subarray(0, mark).reverse();
+					bytes.reverse();
+				}
+				const marked = new Uint8Array(bytes.length + 1);
+				marked.set(bytes);
+				marked[bytes.length] = mark;
+				return encodeCrockford(marked);
+			}
+
+			function decodeCrockford(text) {
+				if (!/^[0-9a-tv-z]+$/i.test(text)) {
+					throw new AliasInputError('Use Crockford Base32 characters (0–9 and letters except U).');
+				}
+				const normalized = text.toLowerCase().replace(/[oil]/g, character => character === 'o' ? '0' : '1');
+				if (normalized.length % 8 !== 0) {
+					throw new AliasInputError('Keep typing: Base32 aliases come in groups of 8 characters.');
+				}
+				let value = 0;
+				let bits = 0;
+				const bytes = [];
+				for (const character of normalized) {
+					value = (value << 5) | alphabet.indexOf(character);
+					bits += 5;
+					if (bits >= 8) {
+						bits -= 8;
+						bytes.push((value >>> bits) & 255);
+						value &= (1 << bits) - 1;
+					}
+				}
+				return Uint8Array.from(bytes);
+			}
+
+			function decodeBase32(text) {
+				const marked = decodeCrockford(text);
+				const mark = marked[marked.length - 1];
+				const bytes = marked.slice(0, -1);
+				if (bytes.length < 4 || mark > 6 || mark >= bytes.length) {
+					throw new AliasInputError('This is not a recognized Base32 alias.');
+				}
+				for (let round = 0; round < mark; round++) {
+					bytes.reverse();
+					bytes.subarray(0, mark).reverse();
+				}
+				if (legacyMark(bytes) !== mark) {
+					throw new AliasInputError('This is not a recognized Base32 alias.');
+				}
+				return bytes;
+			}
+
+			function encodeHex(bytes) {
+				return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+			}
+
+			function decodeHex(text) {
+				if (!/^[0-9a-f]+$/i.test(text)) {
+					throw new AliasInputError('Use hexadecimal characters 0–9 and a–f.');
+				}
+				if (text.length % 2 !== 0) {
+					throw new AliasInputError('Keep typing: hexadecimal characters come in pairs.');
+				}
+				const bytes = new Uint8Array(text.length / 2);
+				for (let i = 0; i < bytes.length; i++) bytes[i] = Number.parseInt(text.slice(i * 2, i * 2 + 2), 16);
+				return bytes;
+			}
+
+			function localPart(text) {
+				const parts = text.trim().split('@');
+				if (parts.length > 2) throw new AliasInputError('Use a local part or an address with a single @.');
+				return parts[0].trim();
+			}
+
+			function createResult(name, ciphertext) {
+				return { name, base32: encodeBase32(ciphertext), hex: encodeHex(ciphertext) };
+			}
+
+			function updateConversion() {
+				const input = fields[source].value;
+				result = null;
+				conversionError = '';
+				try {
+					if (source === 'name' && input) {
+						if (input.includes('\0')) throw new AliasInputError('Names cannot contain null characters.');
+						result = createResult(input, transform(padName(input), ui.key.value));
+					} else if (source !== 'name') {
+						const local = localPart(input);
+						if (local) {
+							const ciphertext = source === 'base32' ? decodeBase32(local) : decodeHex(local);
+							result = { ...createResult(decodeName(ciphertext, ui.key.value), ciphertext), [source]: local };
+						} else if (input.trim()) {
+							throw new AliasInputError('Enter an encoded local part before @.');
+						}
+					}
+				} catch (error) {
+					if (!(error instanceof AliasInputError)) throw error;
+					conversionError = error.message;
+				}
+				for (const [name, field] of Object.entries(fields)) {
+					if (name !== source) field.value = result ? result[name] : '';
+				}
+				render();
+			}
+
+			function inspectDomain() {
+				const value = ui.domain.value.trim();
+				const invalid = { value, error: 'Enter a valid domain without @, such as example.com.', length: 0 };
+				if (!value) return { value: '', error: '', length: 0 };
+				if (/[\s@/\\:?#%]/u.test(value)) return invalid;
+				let hostname;
+				try {
+					hostname = new URL('http://' + value).hostname;
+				} catch {
+					return invalid;
+				}
+				const labels = hostname.split('.');
+				if (hostname.length > 253 || labels.some(label => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label))) {
+					return invalid;
+				}
+				return { value, error: '', length: Math.max(hostname.length, encoder.encode(value).length) };
+			}
+
+			function addressProblem(format, domain) {
+				if (!result) return 'Enter a name or a valid alias first.';
+				if (!domain.value) return 'Add a domain above to copy a full address.';
+				if (domain.error) return 'Enter a valid domain above.';
+				if (result[format].length > 64) return 'Email local parts cannot exceed 64 characters.';
+				if (result[format].length + 1 + domain.length > 254) return 'This address exceeds 254 characters.';
+				return '';
+			}
+
+			function renderFormat(format, domain) {
+				const details = formats[format];
+				const isError = source === format && Boolean(conversionError);
+				const local = result ? result[format] : fields[format].value.split('@')[0].trim();
+				const tooLong = Boolean(result && local.length > 64);
+				const addressTooLong = Boolean(result && domain.value && !domain.error && local.length + 1 + domain.length > 254);
+				fields[format].setAttribute('aria-invalid', String(isError));
+				details.help.classList.toggle('is-warning', isError || tooLong || addressTooLong);
+				details.help.textContent = isError ? conversionError : tooLong
+					? 'Too long for an email local part. Shorten the name.'
+					: addressTooLong ? 'The full address exceeds 254 characters.' : 'Paste a local part or full address to decode.';
+				details.count.textContent = `${local.length} / 64`;
+				details.count.setAttribute('aria-label', `${local.length} of 64 characters`);
+				details.count.classList.toggle('is-warning', local.length > 64);
+				const hasPreview = Boolean(result && domain.value && !domain.error);
+				details.preview.hidden = !hasPreview;
+				details.previewAddress.textContent = hasPreview ? `${local}@${domain.value}` : '';
+				const localButton = document.querySelector(`[data-copy='${format}-local']`);
+				const addressButton = document.querySelector(`[data-copy='${format}-address']`);
+				localButton.disabled = !result;
+				const problem = addressProblem(format, domain);
+				addressButton.disabled = Boolean(problem);
+				addressButton.title = problem;
+			}
+
+			function render() {
+				const domain = inspectDomain();
+				const hasInput = Object.values(fields).some(field => field.value.length > 0);
+				const isNameError = source === 'name' && Boolean(conversionError);
+				const isEmptyKey = !ui.key.value && hasInput;
+				fields.name.setAttribute('aria-invalid', String(isNameError));
+				ui.nameShell.classList.toggle('is-invalid', isNameError);
+				ui.nameHelp.classList.toggle('is-warning', isNameError);
+				ui.nameHelp.textContent = isNameError ? conversionError : 'Or start by entering an encoded alias below.';
+				ui.keyHelp.classList.toggle('is-warning', isEmptyKey);
+				ui.keyHelp.textContent = isEmptyKey
+					? 'No key set. Anyone using an empty key can decode this.'
+					: 'Use the same key to decode an alias later.';
+				ui.domain.setAttribute('aria-invalid', String(Boolean(domain.error)));
+				ui.domainShell.classList.toggle('is-invalid', Boolean(domain.error));
+				ui.domainHelp.classList.toggle('is-warning', Boolean(domain.error));
+				ui.domainHelp.textContent = domain.error || 'Add a domain to copy a full address. Pasting one also sets it here.';
+				ui.clear.disabled = !hasInput;
+				document.querySelector("[data-copy='name']").disabled = !result || !result.name;
+				ui.status.classList.toggle('is-warning', Boolean(conversionError));
+				let status = 'Live conversion';
+				if (conversionError) status = 'Check your input';
+				else if (result && source === 'name') status = 'Encoded from name';
+				else if (result) status = `Decoded from ${source === 'base32' ? 'Base32' : 'hex'}`;
+				const announcement = conversionError ? `${status}: ${conversionError}` : status;
+				if (ui.statusLabel.textContent !== status) ui.statusLabel.textContent = status;
+				if (ui.statusAnnouncement.textContent !== announcement) ui.statusAnnouncement.textContent = announcement;
+				renderFormat('base32', domain);
+				renderFormat('hex', domain);
+			}
+
+			function updateStorageStatus() {
+				ui.storageStatus.textContent = !storageAvailable ? 'Browser storage unavailable' : ui.remember.checked
+					? 'Saved in this browser' : 'Domain saved in this browser';
+			}
+
+			function loadSettings() {
+				try {
+					ui.remember.checked = localStorage.getItem('alias-remember-key') !== 'false';
+					ui.key.value = ui.remember.checked ? localStorage.getItem('key') || '' : '';
+					ui.domain.value = localStorage.getItem('domain') || '';
+				} catch {
+					storageAvailable = false;
+					ui.remember.checked = false;
+					ui.remember.disabled = true;
+				}
+				updateStorageStatus();
+			}
+
+			function saveSettings() {
+				if (!storageAvailable) return;
+				try {
+					if (ui.remember.checked) localStorage.setItem('key', ui.key.value);
+					else localStorage.removeItem('key');
+					localStorage.setItem('alias-remember-key', String(ui.remember.checked));
+					localStorage.setItem('domain', ui.domain.value);
+				} catch {
+					storageAvailable = false;
+					ui.remember.checked = false;
+					ui.remember.disabled = true;
+					showToast('Could not save settings. A previously saved key may remain in browser storage.');
+				}
+				updateStorageStatus();
+			}
+
+			function importDomain(text) {
+				const parts = text.trim().split('@');
+				if (parts.length !== 2) return;
+				ui.domain.value = parts[1].trim();
+				saveSettings();
+			}
+
+			function normalizeEncodedField(format) {
+				if (source !== format) return;
+				if (result) {
+					fields[format].value = result[format];
+					return;
+				}
+				const parts = fields[format].value.trim().split('@');
+				if (parts.length === 2) {
+					fields[format].value = parts[0].trim();
+					updateConversion();
+				}
+			}
+
+			function showToast(message) {
+				clearTimeout(toastTimer);
+				ui.toast.textContent = message;
+				ui.toast.hidden = false;
+				toastTimer = setTimeout(() => { ui.toast.hidden = true; }, 3000);
+			}
+
+			function fallbackCopy(text) {
+				const previous = document.activeElement;
+				const temporary = document.createElement('textarea');
+				temporary.value = text;
+				temporary.setAttribute('readonly', '');
+				temporary.style.cssText = 'position:fixed;left:-9999px;top:0';
+				document.body.append(temporary);
+				temporary.select();
+				let copied = false;
+				try {
+					copied = document.execCommand('copy');
+				} finally {
+					temporary.remove();
+					if (previous instanceof HTMLElement) previous.focus({ preventScroll: true });
+				}
+				return copied;
+			}
+
+			async function copyText(text) {
+				if (navigator.clipboard && window.isSecureContext) {
+					try {
+						await navigator.clipboard.writeText(text);
+						return true;
+					} catch {
+						/* Fall back for browsers that deny the Clipboard API. */
+					}
+				}
+				try {
+					return fallbackCopy(text);
+				} catch {
+					return false;
+				}
+			}
+
+			async function handleCopy(button) {
+				if (!result) return;
+				const kind = button.dataset.copy;
+				const [format, type] = kind.split('-');
+				const text = kind === 'name' ? result.name : type === 'local'
+					? result[format] : `${result[format]}@${inspectDomain().value}`;
+				if (!await copyText(text)) {
+					showToast('Could not copy. Select the text and copy it manually.');
+					return;
+				}
+				showToast(kind === 'name' ? 'Name copied' : type === 'local' ? 'Local part copied' : 'Full address copied');
+				const label = button.querySelector('span');
+				const original = button.dataset.label || label.textContent;
+				button.dataset.label = original;
+				label.textContent = 'Copied!';
+				clearTimeout(copyTimers.get(button));
+				copyTimers.set(button, setTimeout(() => { label.textContent = original; }, 1800));
+			}
+
+			for (const [name, field] of Object.entries(fields)) {
+				field.addEventListener('input', () => {
+					source = name;
+					if (name !== 'name') importDomain(field.value);
+					updateConversion();
+				});
+				if (name !== 'name') field.addEventListener('blur', () => normalizeEncodedField(name));
+			}
+			ui.key.addEventListener('input', () => { saveSettings(); updateConversion(); });
+			ui.domain.addEventListener('input', () => { saveSettings(); render(); });
+			ui.domain.addEventListener('blur', () => {
+				ui.domain.value = ui.domain.value.trim();
+				saveSettings();
+				render();
+			});
+			ui.remember.addEventListener('change', saveSettings);
+			ui.toggleKey.addEventListener('click', () => {
+				const isVisible = ui.key.type === 'password';
+				ui.key.type = isVisible ? 'text' : 'password';
+				ui.toggleKey.textContent = isVisible ? 'Hide' : 'Show';
+				ui.toggleKey.setAttribute('aria-label', isVisible ? 'Hide secret key' : 'Show secret key');
+				ui.toggleKey.setAttribute('aria-pressed', String(isVisible));
+			});
+			ui.clear.addEventListener('click', () => {
+				for (const field of Object.values(fields)) field.value = '';
+				source = 'name';
+				updateConversion();
+				fields.name.focus();
+				showToast('Name and aliases cleared');
+			});
+			for (const button of copyButtons) button.addEventListener('click', () => handleCopy(button));
+
+			loadSettings();
+			updateConversion();
+		})();
+	</script>
+</body>
+</html>
